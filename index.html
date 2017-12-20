@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Objects</title>
+	<link rel="stylesheet" href="">
+	<script type="text/javascript" src="js/MV.js"></script>
+	<script type="text/javascript" src="js/app.js"></script>
+</head>
+<body onload="initApp()">
+	<canvas id ="canvas" width = "800" height = "600">
+		Oops ... your browser doesn't support the HTML5 canvas element
+	</canvas>
+
+	<div>
+		<h3>Controls</h3>
+		<ul>
+			<li>Page Up/Page Down to zoom out/in</li>
+			<li>Cursor keys: make the cube rotate</li>
+		</ul>
+	</div>
+
+	<script id="vertex-shader" type="x-shader/x-vertex">
+			attribute vec3 aVertexPosition;
+		    attribute vec3 aVertexNormal;
+		    attribute vec2 aTextureCoord;
+
+		    uniform mat4 uMVMatrix;
+		    uniform mat4 uMVMatrixLight;
+		    uniform mat4 uPMatrix;
+		    uniform mat3 uNMatrix;
+		    uniform vec3 uPointLightingLocation1;
+
+		    varying vec2 vTextureCoord;
+		    varying vec3 vTransformedNormal;
+		    varying vec4 vPosition;
+		    varying vec4 lightLocation;
+
+		    void main(void) {
+		        lightLocation = uMVMatrixLight * vec4(uPointLightingLocation1, 1.0);
+		        vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+		        gl_Position = uPMatrix * vPosition;
+		        vTextureCoord = aTextureCoord;
+		        vTransformedNormal = uNMatrix * aVertexNormal;
+		    }
+		</script>
+
+		<script id="fragment-shader" type="x-shader/x-fragment">
+			precision mediump float;
+
+		    varying vec2 vTextureCoord;
+		    varying vec3 vTransformedNormal;
+		    varying vec4 vPosition;
+		    varying vec4 lightLocation;
+
+		    uniform vec3 uPointLightingColor;
+
+		    uniform vec3 uLightDirection;
+    		uniform vec3 uLightColor;
+
+		    uniform sampler2D uSampler;
+
+		    void main(void) {
+		        vec3 lightDirection = normalize(lightLocation.xyz - vPosition.xyz);
+		        float directionalLightWeighting = max(dot(normalize(vTransformedNormal), lightDirection), 0.0);
+		        vec3 lightWeighting = vec3(1,0.4,0) * directionalLightWeighting;
+
+		        vec4 fragmentColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+		    	
+
+		    	float lightWeightDirectionalLight = max(dot(vTransformedNormal, uLightDirection), 0.0);
+            	vec3 lightDirectional = uLightColor * lightWeightDirectionalLight;
+
+		        gl_FragColor = vec4(fragmentColor.rgb * (lightWeighting + lightDirectional), fragmentColor.a);
+		    }
+		</script>
+</body>
+</html>
